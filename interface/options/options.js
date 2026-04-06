@@ -199,13 +199,20 @@ document.addEventListener('DOMContentLoaded', async event => {
    * @param {string} text Text to copy.
    */
   function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(err => {
+        console.error('Failed to copy text to clipboard', err);
+      });
+      return;
+    }
+
+    // Fallback for older browsers that don't support clipboard API.
     const fakeText = document.createElement('textarea');
     fakeText.classList.add('clipboardCopier');
     fakeText.textContent = text;
     document.body.appendChild(fakeText);
     fakeText.focus();
     fakeText.select();
-    // TODO: switch to clipboard API.
     document.execCommand('Copy');
     document.body.removeChild(fakeText);
   }
