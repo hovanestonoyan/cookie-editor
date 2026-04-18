@@ -147,17 +147,22 @@ export class GenericCookieHandler extends EventEmitter {
     // TODO: Check if this hack is needed on devtools.
     if (this.browserDetector.isSafari() && !isRecursive) {
       this.getAllCookies(cookies => {
-        const matchingCookie = cookies.find(cookie => cookie.name === name);
-        if (matchingCookie) {
-          const scheme = matchingCookie.secure ? 'https://' : 'http://';
-          this.removeCookie(
-            name,
-            scheme + matchingCookie.domain,
-            callback,
-            true
-          );
-        } else if (callback) {
-          callback();
+        const matches = cookies.filter(cookie => cookie.name === name);
+        if (matches.length === 0) {
+          if (callback) {
+            callback();
+          }
+          return;
+        }
+        let remaining = matches.length;
+        for (const match of matches) {
+          const scheme = match.secure ? 'https://' : 'http://';
+          this.removeCookie(name, scheme + match.domain, () => {
+            remaining--;
+            if (remaining === 0 && callback) {
+              callback();
+            }
+          }, true);
         }
       });
     } else if (this.browserDetector.supportsPromises()) {
