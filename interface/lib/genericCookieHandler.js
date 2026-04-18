@@ -63,7 +63,8 @@ export class GenericCookieHandler extends EventEmitter {
     // Bad hack on safari because cookies needs to have the very exact same domain
     // to be able to edit it.
     if (this.browserDetector.isSafari() && newCookie.domain) {
-      newCookie.url = 'http://' + newCookie.domain;
+      const scheme = newCookie.secure ? 'https://' : 'http://';
+      newCookie.url = scheme + newCookie.domain;
     }
     if (this.browserDetector.isSafari() && !newCookie.path) {
       newCookie.path = '/';
@@ -101,7 +102,7 @@ export class GenericCookieHandler extends EventEmitter {
         .getApi()
         .cookies.set(cookie)
         .then(
-          (cookie, a, b, c) => {
+          cookie => {
             if (callback) {
               callback(null, cookie);
             }
@@ -146,10 +147,22 @@ export class GenericCookieHandler extends EventEmitter {
     // TODO: Check if this hack is needed on devtools.
     if (this.browserDetector.isSafari() && !isRecursive) {
       this.getAllCookies(cookies => {
-        for (const cookie of cookies) {
-          if (cookie.name === name) {
-            this.removeCookie(name, 'http://' + cookie.domain, callback, true);
+        const matches = cookies.filter(cookie => cookie.name === name);
+        if (matches.length === 0) {
+          if (callback) {
+            callback();
           }
+          return;
+        }
+        let remaining = matches.length;
+        for (const match of matches) {
+          const scheme = match.secure ? 'https://' : 'http://';
+          this.removeCookie(name, scheme + match.domain, () => {
+            remaining--;
+            if (remaining === 0 && callback) {
+              callback();
+            }
+          }, true);
         }
       });
     } else if (this.browserDetector.supportsPromises()) {
