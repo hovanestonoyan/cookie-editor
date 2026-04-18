@@ -541,8 +541,9 @@ import { CookieHandlerPopup } from './cookieHandlerPopup.js';
 
     adjustWidthIfSmaller();
 
-    if (chrome && chrome.runtime && chrome.runtime.getBrowserInfo) {
-      chrome.runtime.getBrowserInfo(function (info) {
+    const api = browserDetector.getApi();
+    if (api && api.runtime && api.runtime.getBrowserInfo) {
+      api.runtime.getBrowserInfo(function (info) {
         const mainVersion = info.version.split('.')[0];
         if (mainVersion < 57) {
           containerCookie.style.height = '600px';
@@ -571,7 +572,6 @@ import { CookieHandlerPopup } from './cookieHandlerPopup.js';
     document.getElementById('button-bar-add').classList.remove('active');
     document.getElementById('button-bar-import').classList.remove('active');
     document.getElementById('button-bar-default').classList.add('active');
-    document.myThing = 'DarkSide';
     const domain = getDomainFromUrl(cookieHandler.currentTab.url);
     const subtitleLine = document.querySelector('.titles h2');
     if (subtitleLine) {

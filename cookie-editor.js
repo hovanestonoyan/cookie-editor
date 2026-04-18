@@ -275,12 +275,21 @@ import { PermissionHandler } from './interface/lib/permissionHandler.js';
    *     otherwise false.
    */
   function isSafariIos(callback) {
-    browserDetector
-      .getApi()
-      .runtime.getPlatformInfo()
-      .then(info => {
-        console.log('check for safari on ios: ', info.os);
-        callback(info.os === 'ios');
-      });
+    if (browserDetector.supportsPromises()) {
+      browserDetector
+        .getApi()
+        .runtime.getPlatformInfo()
+        .then(info => {
+          console.log('check for safari on ios: ', info.os);
+          callback(info.os === 'ios');
+        });
+    } else {
+      browserDetector
+        .getApi()
+        .runtime.getPlatformInfo(info => {
+          console.log('check for safari on ios: ', info.os);
+          callback(info.os === 'ios');
+        });
+    }
   }
 })();

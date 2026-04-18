@@ -14,28 +14,31 @@ export class Animate {
 
     el.style.display = 'flex';
 
-    el.addEventListener(
-      'transitionend',
-      function () {
-        if (callback) {
-          callback();
-        }
-
-        if (self.isHidden(el)) {
-          el.style.display = 'none';
-        }
-
-        // Hack to force firefox to resize the popup window after the animation
-        // is done
-        document.body.style.height = '100%';
-        setTimeout(function () {
-          document.body.style.height = '';
-        }, 10);
-      },
-      {
-        once: true,
+    let transitionDone = false;
+    const onTransitionDone = function () {
+      if (transitionDone) {
+        return;
       }
-    );
+      transitionDone = true;
+
+      if (callback) {
+        callback();
+      }
+
+      if (self.isHidden(el)) {
+        el.style.display = 'none';
+      }
+
+      // Hack to force firefox to resize the popup window after the animation
+      // is done
+      document.body.style.height = '100%';
+      setTimeout(function () {
+        document.body.style.height = '';
+      }, 10);
+    };
+
+    el.addEventListener('transitionend', onTransitionDone, { once: true });
+    setTimeout(onTransitionDone, 350);
 
     if (el.getAttribute('data-max-height')) {
       // we've already used this before, so everything is setup
@@ -129,26 +132,33 @@ export class Animate {
       return;
     }
     const animationTime = '0.3s';
+    const animationTimeMs = 300;
 
-    container.addEventListener(
-      'transitionend',
-      () => {
-        container.style.maxHeight = '';
-        container.style.transition = '';
-        container.style.display = '';
-        container.style.width = '';
-        container.style.transform = '';
-        container.style.overflowY = 'auto';
-        if (oldPage) {
-          oldPage.remove();
-        }
-        callback();
-      },
-      {
-        passive: true,
-        once: true,
+    let transitionDone = false;
+    const onTransitionDone = () => {
+      if (transitionDone) {
+        return;
       }
-    );
+      transitionDone = true;
+      container.style.maxHeight = '';
+      container.style.transition = '';
+      container.style.display = '';
+      container.style.width = '';
+      container.style.transform = '';
+      container.style.overflowY = 'auto';
+      if (oldPage) {
+        oldPage.remove();
+      }
+      callback();
+    };
+
+    container.addEventListener('transitionend', onTransitionDone, {
+      passive: true,
+      once: true,
+    });
+
+    // Safety fallback in case transitionend doesn't fire (Safari quirk).
+    setTimeout(onTransitionDone, animationTimeMs + 100);
 
     container.style.overflowY = 'hidden';
     container.style.width = '200%';
