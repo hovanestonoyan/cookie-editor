@@ -20,24 +20,20 @@ export class GenericCookieHandler extends EventEmitter {
    * @param {function} callback
    */
   getAllCookies(callback) {
+    const params = { url: this.currentTab.url };
+    if (this.currentTab.cookieStoreId) {
+      params.storeId = this.currentTab.cookieStoreId;
+    }
+
     if (this.browserDetector.supportsPromises()) {
       this.browserDetector
         .getApi()
-        .cookies.getAll({
-          url: this.currentTab.url,
-          storeId: this.currentTab.cookieStoreId,
-        })
+        .cookies.getAll(params)
         .then(callback, function (e) {
           console.error('Failed to retrieve cookies', e);
         });
     } else {
-      this.browserDetector.getApi().cookies.getAll(
-        {
-          url: this.currentTab.url,
-          storeId: this.currentTab.cookieStoreId,
-        },
-        callback
-      );
+      this.browserDetector.getApi().cookies.getAll(params, callback);
     }
   }
 
@@ -56,7 +52,7 @@ export class GenericCookieHandler extends EventEmitter {
       secure: cookie.secure || null,
       httpOnly: cookie.httpOnly || null,
       expirationDate: cookie.expirationDate || null,
-      storeId: cookie.storeId || this.currentTab.cookieStoreId || null,
+      storeId: cookie.storeId || this.currentTab.cookieStoreId || undefined,
       url: url,
     };
 
@@ -166,13 +162,13 @@ export class GenericCookieHandler extends EventEmitter {
         }
       });
     } else if (this.browserDetector.supportsPromises()) {
+      const removeParams = { name: name, url: url };
+      if (this.currentTab.cookieStoreId) {
+        removeParams.storeId = this.currentTab.cookieStoreId;
+      }
       this.browserDetector
         .getApi()
-        .cookies.remove({
-          name: name,
-          url: url,
-          storeId: this.currentTab.cookieStoreId,
-        })
+        .cookies.remove(removeParams)
         .then(callback, function (e) {
           console.error('Failed to remove cookies', e);
           if (callback) {
@@ -180,12 +176,12 @@ export class GenericCookieHandler extends EventEmitter {
           }
         });
     } else {
+      const removeParams = { name: name, url: url };
+      if (this.currentTab.cookieStoreId) {
+        removeParams.storeId = this.currentTab.cookieStoreId;
+      }
       this.browserDetector.getApi().cookies.remove(
-        {
-          name: name,
-          url: url,
-          storeId: this.currentTab.cookieStoreId,
-        },
+        removeParams,
         cookieResponse => {
           const error = this.browserDetector.getApi().runtime.lastError;
           if (!cookieResponse || error) {
